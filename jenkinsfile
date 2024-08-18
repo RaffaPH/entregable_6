@@ -1,0 +1,42 @@
+pipeline {
+    agent any
+
+    environment {
+        SERVER_HOST = 'http://192.168.0.46/' // Cambia esto por la dirección IP o nombre de host de tu VM en VirtualBox
+        SERVER_PORT = 80 // Puerto de Apache
+        USERNAME = 'jenkins' // Tu usuario en el servidor
+        PASSWORD = 'jenkins2024' // Tu contraseña en el servidor
+        INDEX_FILE_PATH = '/var/www/html/index.html' // Ruta al archivo index.html en el servidor
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                git branch: 'main', url: 'https://github.com/tu_usuario/tu_repositorio.git'
+            }
+        }
+
+        stage('Update Index File') {
+            steps {
+                sshPublisher(
+                    continueOnError: false,
+                    failOnError: true,
+                    publishers: [
+                        sshPublisherDesc(
+                            configName: 'configuracion_ssh',
+                            transfers: [
+                                sshTransfer(
+                                    sourceFiles: "${INDEX_FILE_PATH}",
+                                    removePrefix: '',
+                                    remoteDirectory: '/',
+                                    execCommand: "echo 'Contenido modificado' > ${INDEX_FILE_PATH}"
+                                )
+                            ],
+                            verbose: true
+                        )
+                    ]
+                )
+            }
+        }
+    }
+}
